@@ -160,21 +160,15 @@ Required: AWS_ACCOUNT_ID
             
         elif args.transport == 'sse':
             logger.info(f"Running with SSE transport on {config.mcp_host}:{config.mcp_port}...")
-            # SSE transport requires uvicorn
-            try:
-                mcp.run_sse(host=config.mcp_host, port=config.mcp_port)
-            except ImportError:
-                logger.error("SSE transport requires uvicorn. Install with: pip install uvicorn")
-                sys.exit(1)
-                
+            mcp.settings.host = config.mcp_host
+            mcp.settings.port = config.mcp_port
+            mcp.run(transport='sse')
+
         elif args.transport == 'http':
             logger.info(f"Running with HTTP transport on {config.mcp_host}:{config.mcp_port}...")
-            # HTTP transport requires uvicorn and fastapi
-            try:
-                mcp.run_http(host=config.mcp_host, port=config.mcp_port)
-            except ImportError:
-                logger.error("HTTP transport requires uvicorn and fastapi. Install with: pip install uvicorn fastapi")
-                sys.exit(1)
+            mcp.settings.host = config.mcp_host
+            mcp.settings.port = config.mcp_port
+            mcp.run(transport='streamable-http')
         
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
