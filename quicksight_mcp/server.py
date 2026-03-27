@@ -3,6 +3,7 @@
 import logging
 import boto3
 from mcp.server import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from quicksight_mcp.config import Config
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,13 @@ def create_server(config: Config) -> FastMCP:
     """
     config.validate()
     
-    mcp = FastMCP(name='quicksight-mcp')
+    mcp = FastMCP(
+        name='quicksight-mcp',
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=["quicksight-mcp-service:*", "127.0.0.1:*", "localhost:*"],
+        )
+    )
     
     # Store config in server instance for tools to access
     mcp.config = config
