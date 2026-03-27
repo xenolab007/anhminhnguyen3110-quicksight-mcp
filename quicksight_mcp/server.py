@@ -21,13 +21,16 @@ def create_server(config: Config) -> FastMCP:
     """
     config.validate()
     
+    allowed_hosts = ["quicksight-mcp-service:*", "127.0.0.1:*", "localhost:*"]
     mcp = FastMCP(
         name='quicksight-mcp',
         transport_security=TransportSecuritySettings(
             enable_dns_rebinding_protection=True,
-            allowed_hosts=["quicksight-mcp-service:*", "127.0.0.1:*", "localhost:*"],
+            allowed_hosts=allowed_hosts,
         )
     )
+
+    logger.info(f"DNS rebinding protection enabled. Allowed hosts: {allowed_hosts}")
     
     # Store config in server instance for tools to access
     mcp.config = config
