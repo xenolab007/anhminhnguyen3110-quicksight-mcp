@@ -51,27 +51,41 @@ A Model Context Protocol (MCP) server for Amazon QuickSight that enables AI assi
 ## Installation
 
 ### Prerequisites
-- Python 3.11 or higher
-- AWS credentials configured
-- Amazon QuickSight account
+
+- macOS or Linux
+- [uv](https://docs.astral.sh/uv/) — it installs and pins the right Python for you
+- An AWS account with QuickSight activated in the target region, and credentials carrying the permissions listed under [Required AWS Permissions](#required-aws-permissions)
+
+```bash
+xcode-select --install                            # git + toolchain (macOS)
+curl -LsSf https://astral.sh/uv/install.sh | sh   # uv; restart your shell afterwards
+```
+
+Python is not a separate step: `.python-version` pins 3.13 and `uv` fetches it automatically.
 
 ### Setup
 
-1. **Install dependencies**:
-```bash
-pip install -e .
+1. **Clone and install dependencies**:
 
-# For HTTP/SSE server support:
-pip install -e ".[server]"
+```bash
+git clone git@github.com:xenolab007/anhminhnguyen3110-quicksight-mcp.git
+cd anhminhnguyen3110-quicksight-mcp
+uv sync
 ```
 
-2. **Configure environment**:
+`uv sync` creates `.venv` and installs the locked dependency set from `uv.lock`. Add `--extra server` only if you need the SSE or HTTP transports; the stdio transport that MCP clients use does not require it.
+
+2. **Configure credentials**:
+
+`.env` is gitignored, so it does not arrive with the clone and must be created on every machine:
+
 ```bash
 cp .env.example .env
-# Edit .env with your AWS credentials
+chmod 600 .env
 ```
 
 Required `.env` variables:
+
 ```bash
 AWS_ACCOUNT_ID=123456789012
 AWS_REGION=us-east-1
@@ -79,25 +93,45 @@ AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 ```
 
-## Usage
+Leave the two key variables out to fall back to the default boto3 credential chain instead (`~/.aws/credentials`, `AWS_PROFILE`, SSO, instance roles). `MCP_HOST` and `MCP_PORT` are optional and affect only the SSE/HTTP transports.
 
-### STDIO Transport (for Claude Desktop)
+> **`.env` is read from the current working directory**, not from the repo directory. Start the server with the repo as its working directory, or supply configuration through `--aws-account-id` / `--aws-region` flags or real environment variables.
+
+> The `.env` parser is deliberately minimal: no quotes, no inline comments, no `export` prefix. `KEY="value"` keeps the quotes as part of the value, and a real environment variable of the same name always wins over `.env`.
+
+3. **Verify the install**:
 
 ```bash
-python main.py
+uv run main.py     # expect "All tools registered successfully"; Ctrl-C to exit
 ```
 
-Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+## Usage
+
+### STDIO Transport (for MCP clients)
+
+```bash
+uv run main.py
+```
+
+**Claude Code** — register once and use it from any project:
+
+```bash
+claude mcp add quicksight -s user -- sh -c 'cd /path/to/anhminhnguyen3110-quicksight-mcp && exec .venv/bin/python main.py'
+```
+
+The `cd` is required so that `.env` resolves; without it the server exits with `Configuration error: AWS_ACCOUNT_ID is required`. Use `-s local` to scope the server to a single project, or `-s project` to commit it to `.mcp.json` for the team.
+
+**Claude Desktop** — add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
 ```json
 {
   "mcpServers": {
     "quicksight": {
-      "command": "python",
-      "args": ["/path/to/quicksight-mcp/main.py"],
-      "env": {
-        "AWS_ACCOUNT_ID": "123456789012",
-        "AWS_REGION": "us-east-1"
-      }
+      "command": "sh",
+      "args": [
+        "-c",
+        "cd /path/to/anhminhnguyen3110-quicksight-mcp && exec .venv/bin/python main.py"
+      ]
     }
   }
 }
@@ -106,19 +140,19 @@ Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_deskt
 ### SSE Transport (for web clients)
 
 ```bash
-python main.py --transport sse --host 0.0.0.0 --port 8080
+uv run main.py --transport sse --host 0.0.0.0 --port 8080
 ```
 
 ### HTTP Transport (RESTful API)
 
 ```bash
-python main.py --transport http --port 3000
+uv run main.py --transport http --port 3000
 ```
 
 ### Debug Mode
 
 ```bash
-python main.py --debug
+uv run main.py --debug
 ```
 
 ## Available Tools
@@ -262,56 +296,23 @@ q chat "Show me all analyses in us-west-2 for account 123456789012"
 q chat "Give me an overview of QuickSight resources in account 123456789012"
 ```
 
-## Prerequisites
-
-- AWS credentials configured with appropriate QuickSight permissions
-- Access to the target AWS account and regions
-- QuickSight service activated in the target regions
-
 ## Required AWS Permissions
 
-The MCP server requires the following QuickSight permissions:
-- `quicksight:ListDashboards`
-- `quicksight:ListAnalyses`
-- `quicksight:ListDataSets`
-- `quicksight:ListDataSources`
-- `quicksight:DescribeDashboard`
-- `quicksight:DescribeAnalysis`
-- `quicksight:DescribeDataSet`
-- `quicksight:DescribeDataSource`
+Read-only tools (`list_*`, `describe_*`, `search_*`, `quicksight_overview`) need:
 
-## Installation and Configuration
+- `quicksight:List*`, `quicksight:Describe*`, `quicksight:Search*`
 
-1. Install UV on macOS/Linux
-```
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-2. create venv and 
-```
-% git clone https://github.com/heisenbergye/quicksight-mcp.git
-% cd quicksight-mcp
-% uv venv .venv
-% source .venv/bin/activate
-% uv add "mcp[cli]" boto3
-```
-3. [Install Q CLI](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-installing.html) and [Ensure the MCP server is properly configured in your Q CLI environment](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-mcp-understanding-config.html), or you can use CLINE in IDE etc.
-```
-$ cat ~/.aws/amazonq/mcp.json
-{
-  "mcpServers": {
-    "quicksight-mcp": {
-      "command": "/Users/xxxxx/xxxxx/Cline/MCP/quicksight-mcp/.venv/bin/python3",
-      "args": [
-        "/Users/xxxxx/xxxxx/Cline/MCP/quicksight-mcp/main.py"
-      ],
-      "disabled": false,
-      "alwaysAllow": []
-    }
-}
-}
-```
-4. Configue AWS CLi with AWS credentials have the necessary QuickSight permissions
-5. Test connectivity with a simple resource listing command
+Write tools need the matching action per resource, for example:
+
+- Analyses — `CreateAnalysis`, `UpdateAnalysis`, `DeleteAnalysis`, `RestoreAnalysis`
+- Dashboards — `CreateDashboard`, `UpdateDashboard`, `UpdateDashboardPublishedVersion`, `DeleteDashboard`
+- Datasets / data sources — `CreateDataSet`, `UpdateDataSet`, `DeleteDataSet`, `CreateDataSource`, `UpdateDataSource`, `DeleteDataSource`
+- Ingestion — `CreateIngestion`, `CancelIngestion`, `CreateRefreshSchedule`, `UpdateRefreshSchedule`, `DeleteRefreshSchedule`
+- Templates / themes — `CreateTemplate`, `UpdateTemplate`, `DeleteTemplate`, `CreateTheme`, `UpdateTheme`, `DeleteTheme`
+- Permission tools — `UpdateAnalysisPermissions`, `UpdateDashboardPermissions`, `UpdateDataSetPermissions`, `UpdateDataSourcePermissions`
+- Embedding — `GenerateEmbedUrlForRegisteredUser`, `GenerateEmbedUrlForAnonymousUser`
+
+Grant only what the deployment actually needs. The `delete_*` tools are destructive and are worth withholding from read-only or exploratory setups.
 
 ## Common Use Cases
 
