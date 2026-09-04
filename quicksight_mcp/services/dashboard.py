@@ -249,3 +249,26 @@ class DashboardService:
         except Exception as e:
             logger.error(f"Error updating dashboard permissions {dashboard_id}: {str(e)}")
             raise
+
+    def delete_dashboard(
+        self,
+        dashboard_id: str,
+        version_number: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Delete a dashboard, or a single version of it"""
+        try:
+            params = {
+                'AwsAccountId': self.account_id,
+                'DashboardId': dashboard_id
+            }
+
+            if version_number:
+                params['VersionNumber'] = version_number
+
+            response = self.client.delete_dashboard(**params)
+            logger.info(f"Deleted dashboard: {dashboard_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error deleting dashboard {dashboard_id}: {str(e)}")
+            raise

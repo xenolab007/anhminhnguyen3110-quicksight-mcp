@@ -11,7 +11,8 @@ from quicksight_mcp.models.tool_models import (
     UpdateDashboardRequest, UpdateDashboardResponse,
     UpdateDashboardPublishedVersionRequest, UpdateDashboardPublishedVersionResponse,
     UpdateDashboardPermissionsRequest, UpdateDashboardPermissionsResponse,
-    PaginationInfo, ErrorInfo
+    PaginationInfo, ErrorInfo,
+    DeleteDashboardRequest, DeleteDashboardResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -302,6 +303,40 @@ def register_dashboard_tools(mcp):
             return UpdateDashboardPermissionsResponse(
                 dashboard_arn="",
                 dashboard_id=request.dashboard_id,
+                status="FAILED",
+                error=ErrorInfo(message=str(e))
+            )
+    
+    @mcp.tool(
+        name="delete_dashboard",
+        description=(
+            "Permanently delete a dashboard. Pass version_number to delete only that one "
+            "version instead of the whole dashboard. This cannot be undone."
+        )
+    )
+    async def delete_dashboard(request: DeleteDashboardRequest) -> DeleteDashboardResponse:
+        """Delete a dashboard or one of its versions"""
+        config = mcp.config
+        quicksight = mcp.quicksight
+
+        try:
+            service = DashboardService(quicksight, config.aws_account_id)
+            response = service.delete_dashboard(
+                dashboard_id=request.dashboard_id,
+                version_number=request.version_number
+            )
+
+            return DeleteDashboardResponse(
+                dashboard_id=response.get('DashboardId', request.dashboard_id),
+                arn=response.get('Arn', ''),
+                status="SUCCESS"
+            )
+
+        except Exception as e:
+            logger.error(f"Error deleting dashboard: {str(e)}")
+            return DeleteDashboardResponse(
+                dashboard_id=request.dashboard_id,
+                arn="",
                 status="FAILED",
                 error=ErrorInfo(message=str(e))
             )

@@ -8,7 +8,8 @@ from quicksight_mcp.models.tool_models import (
     DescribeThemeRequest, DescribeThemeResponse,
     CreateThemeRequest as ThemeToolRequest, CreateThemeResponse as ThemeToolResponse,
     UpdateThemeRequest as ThemeToolUpdateRequest, UpdateThemeResponse as ThemeToolUpdateResponse,
-    PaginationInfo, ErrorInfo
+    PaginationInfo, ErrorInfo,
+    DeleteThemeRequest, DeleteThemeResponse,
 )
 from quicksight_mcp.models.theme import (
     CreateThemeRequest,
@@ -218,6 +219,40 @@ def register_theme_tools(mcp):
                 theme_id=request.theme_id,
                 version_arn="",
                 update_status="FAILED",
+                status="FAILED",
+                error=ErrorInfo(message=str(e))
+            )
+    
+    @mcp.tool(
+        name="delete_theme",
+        description=(
+            "Permanently delete a theme. Pass version_number to delete only that one "
+            "version instead of the whole theme. This cannot be undone."
+        )
+    )
+    async def delete_theme(request: DeleteThemeRequest) -> DeleteThemeResponse:
+        """Delete a theme or one of its versions"""
+        config = mcp.config
+        quicksight = mcp.quicksight
+
+        try:
+            service = ThemeService(quicksight, config.aws_account_id)
+            response = service.delete_theme(
+                theme_id=request.theme_id,
+                version_number=request.version_number
+            )
+
+            return DeleteThemeResponse(
+                theme_id=response.get('ThemeId', request.theme_id),
+                arn=response.get('Arn', ''),
+                status="SUCCESS"
+            )
+
+        except Exception as e:
+            logger.error(f"Error deleting theme: {str(e)}")
+            return DeleteThemeResponse(
+                theme_id=request.theme_id,
+                arn="",
                 status="FAILED",
                 error=ErrorInfo(message=str(e))
             )

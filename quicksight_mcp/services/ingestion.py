@@ -134,3 +134,18 @@ class IngestionService:
         except Exception as e:
             logger.error(f"Error updating refresh schedule {schedule_id}: {str(e)}")
             raise
+
+    def delete_refresh_schedule(self, dataset_id: str, schedule_id: str) -> Dict[str, Any]:
+        """Delete a refresh schedule from a dataset"""
+        try:
+            response = self.client.delete_refresh_schedule(
+                AwsAccountId=self.account_id,
+                DataSetId=dataset_id,
+                ScheduleId=schedule_id
+            )
+            logger.info(f"Deleted refresh schedule {schedule_id} on dataset {dataset_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error deleting refresh schedule {schedule_id}: {str(e)}")
+            raise

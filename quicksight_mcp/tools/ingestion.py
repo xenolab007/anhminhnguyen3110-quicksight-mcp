@@ -10,7 +10,8 @@ from quicksight_mcp.models.tool_models import (
     ListRefreshSchedulesRequest, ListRefreshSchedulesResponse,
     CreateRefreshScheduleRequest, CreateRefreshScheduleResponse,
     UpdateRefreshScheduleRequest, UpdateRefreshScheduleResponse,
-    ErrorInfo
+    ErrorInfo,
+    DeleteRefreshScheduleRequest, DeleteRefreshScheduleResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -288,6 +289,39 @@ def register_ingestion_tools(mcp):
             return UpdateRefreshScheduleResponse(
                 arn="",
                 schedule_id=request.schedule_id,
+                status="FAILED",
+                error=ErrorInfo(message=str(e))
+            )
+    
+    @mcp.tool(
+        name="delete_refresh_schedule",
+        description="Permanently delete a refresh schedule from a dataset. This cannot be undone."
+    )
+    async def delete_refresh_schedule(request: DeleteRefreshScheduleRequest) -> DeleteRefreshScheduleResponse:
+        """Delete a dataset refresh schedule"""
+        config = mcp.config
+        quicksight = mcp.quicksight
+
+        try:
+            service = IngestionService(quicksight, config.aws_account_id)
+            response = service.delete_refresh_schedule(
+                dataset_id=request.dataset_id,
+                schedule_id=request.schedule_id
+            )
+
+            return DeleteRefreshScheduleResponse(
+                dataset_id=request.dataset_id,
+                schedule_id=response.get('ScheduleId', request.schedule_id),
+                arn=response.get('Arn', ''),
+                status="SUCCESS"
+            )
+
+        except Exception as e:
+            logger.error(f"Error deleting refresh schedule: {str(e)}")
+            return DeleteRefreshScheduleResponse(
+                dataset_id=request.dataset_id,
+                schedule_id=request.schedule_id,
+                arn="",
                 status="FAILED",
                 error=ErrorInfo(message=str(e))
             )

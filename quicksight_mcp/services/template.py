@@ -120,3 +120,26 @@ class TemplateService:
         except Exception as e:
             logger.error(f"Error describing template definition {template_id}: {str(e)}")
             raise
+
+    def delete_template(
+        self,
+        template_id: str,
+        version_number: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Delete a template, or a single version of it"""
+        try:
+            params = {
+                'AwsAccountId': self.account_id,
+                'TemplateId': template_id
+            }
+
+            if version_number:
+                params['VersionNumber'] = version_number
+
+            response = self.client.delete_template(**params)
+            logger.info(f"Deleted template: {template_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error deleting template {template_id}: {str(e)}")
+            raise

@@ -8,7 +8,8 @@ from quicksight_mcp.models.tool_models import (
     CreateDatasourceRequest, CreateDatasourceResponse,
     UpdateDatasourceRequest, UpdateDatasourceResponse,
     UpdateDatasourcePermissionsRequest, UpdateDatasourcePermissionsResponse,
-    PaginationInfo, ErrorInfo
+    PaginationInfo, ErrorInfo,
+    DeleteDatasourceRequest, DeleteDatasourceResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -225,6 +226,34 @@ def register_datasource_tools(mcp):
             return UpdateDatasourcePermissionsResponse(
                 datasource_arn="",
                 datasource_id=request.datasource_id,
+                status="FAILED",
+                error=ErrorInfo(message=str(e))
+            )
+    
+    @mcp.tool(
+        name="delete_data_source",
+        description="Permanently delete a data source. This cannot be undone, and any dataset built on it will break."
+    )
+    async def delete_data_source(request: DeleteDatasourceRequest) -> DeleteDatasourceResponse:
+        """Delete a data source"""
+        config = mcp.config
+        quicksight = mcp.quicksight
+
+        try:
+            service = DatasourceService(quicksight, config.aws_account_id)
+            response = service.delete_datasource(datasource_id=request.datasource_id)
+
+            return DeleteDatasourceResponse(
+                datasource_id=response.get('DataSourceId', request.datasource_id),
+                arn=response.get('Arn', ''),
+                status="SUCCESS"
+            )
+
+        except Exception as e:
+            logger.error(f"Error deleting data source: {str(e)}")
+            return DeleteDatasourceResponse(
+                datasource_id=request.datasource_id,
+                arn="",
                 status="FAILED",
                 error=ErrorInfo(message=str(e))
             )

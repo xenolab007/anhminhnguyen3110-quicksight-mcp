@@ -64,6 +64,7 @@ class DescribeAnalysisResponse:
 class DescribeAnalysisDefinitionRequest:
     """Request to describe analysis definition"""
     analysis_id: str
+    sheet_index: Optional[int] = None  # If set, return only this sheet (0-based); omit for summary mode
 
 
 @dataclass
@@ -74,6 +75,8 @@ class DescribeAnalysisDefinitionResponse:
     errors: List[Dict[str, Any]]
     status: str = "SUCCESS"
     error: Optional[ErrorInfo] = None
+    total_sheets: Optional[int] = None
+    sheet_summaries: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass
@@ -867,5 +870,137 @@ class SearchDatasourcesResponse:
     """Response from search datasources"""
     datasources: List[Dict[str, Any]]
     pagination: PaginationInfo
+    status: str = "SUCCESS"
+    error: Optional[ErrorInfo] = None
+
+
+# ============================================================================
+# Delete Tool Models
+# ============================================================================
+
+@dataclass
+class DeleteAnalysisRequest:
+    """Request to delete an analysis"""
+    analysis_id: str
+    recovery_window_in_days: Optional[int] = 30
+    force_delete_without_recovery: bool = False
+
+
+@dataclass
+class DeleteAnalysisResponse:
+    """Response from delete analysis"""
+    analysis_id: str
+    arn: str
+    deletion_time: Optional[str] = None
+    status: str = "SUCCESS"
+    error: Optional[ErrorInfo] = None
+
+
+@dataclass
+class RestoreAnalysisRequest:
+    """Request to restore an analysis that is pending deletion"""
+    analysis_id: str
+
+
+@dataclass
+class RestoreAnalysisResponse:
+    """Response from restore analysis"""
+    analysis_id: str
+    arn: str
+    status: str = "SUCCESS"
+    error: Optional[ErrorInfo] = None
+
+
+@dataclass
+class DeleteDashboardRequest:
+    """Request to delete a dashboard"""
+    dashboard_id: str
+    version_number: Optional[int] = None
+
+
+@dataclass
+class DeleteDashboardResponse:
+    """Response from delete dashboard"""
+    dashboard_id: str
+    arn: str
+    status: str = "SUCCESS"
+    error: Optional[ErrorInfo] = None
+
+
+@dataclass
+class DeleteDatasetRequest:
+    """Request to delete a dataset"""
+    dataset_id: str
+
+
+@dataclass
+class DeleteDatasetResponse:
+    """Response from delete dataset"""
+    dataset_id: str
+    arn: str
+    status: str = "SUCCESS"
+    error: Optional[ErrorInfo] = None
+
+
+@dataclass
+class DeleteDatasourceRequest:
+    """Request to delete a datasource"""
+    datasource_id: str
+
+
+@dataclass
+class DeleteDatasourceResponse:
+    """Response from delete datasource"""
+    datasource_id: str
+    arn: str
+    status: str = "SUCCESS"
+    error: Optional[ErrorInfo] = None
+
+
+@dataclass
+class DeleteTemplateRequest:
+    """Request to delete a template"""
+    template_id: str
+    version_number: Optional[int] = None
+
+
+@dataclass
+class DeleteTemplateResponse:
+    """Response from delete template"""
+    template_id: str
+    arn: str
+    status: str = "SUCCESS"
+    error: Optional[ErrorInfo] = None
+
+
+@dataclass
+class DeleteThemeRequest:
+    """Request to delete a theme"""
+    theme_id: str
+    version_number: Optional[int] = None
+
+
+@dataclass
+class DeleteThemeResponse:
+    """Response from delete theme"""
+    theme_id: str
+    arn: str
+    status: str = "SUCCESS"
+    error: Optional[ErrorInfo] = None
+
+
+@dataclass
+class DeleteRefreshScheduleRequest:
+    """Request to delete a dataset refresh schedule"""
+    dataset_id: str
+    schedule_id: str
+
+
+@dataclass
+class DeleteRefreshScheduleResponse:
+    """Response from delete refresh schedule"""
+    dataset_id: str
+    schedule_id: str
+    arn: str
     status: str = "SUCCESS"
     error: Optional[ErrorInfo] = None

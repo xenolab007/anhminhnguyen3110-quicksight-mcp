@@ -168,3 +168,44 @@ class AnalysisService:
         except Exception as e:
             logger.error(f"Error updating analysis permissions {analysis_id}: {str(e)}")
             raise
+
+    def delete_analysis(
+        self,
+        analysis_id: str,
+        recovery_window_in_days: Optional[int] = 30,
+        force_delete_without_recovery: bool = False
+    ) -> Dict[str, Any]:
+        """Delete an analysis, optionally skipping the recovery window"""
+        try:
+            params = {
+                'AwsAccountId': self.account_id,
+                'AnalysisId': analysis_id
+            }
+
+            # The two options are mutually exclusive in the QuickSight API
+            if force_delete_without_recovery:
+                params['ForceDeleteWithoutRecovery'] = True
+            elif recovery_window_in_days:
+                params['RecoveryWindowInDays'] = recovery_window_in_days
+
+            response = self.client.delete_analysis(**params)
+            logger.info(f"Deleted analysis: {analysis_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error deleting analysis {analysis_id}: {str(e)}")
+            raise
+
+    def restore_analysis(self, analysis_id: str) -> Dict[str, Any]:
+        """Restore an analysis that is still inside its recovery window"""
+        try:
+            response = self.client.restore_analysis(
+                AwsAccountId=self.account_id,
+                AnalysisId=analysis_id
+            )
+            logger.info(f"Restored analysis: {analysis_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error restoring analysis {analysis_id}: {str(e)}")
+            raise

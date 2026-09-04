@@ -158,3 +158,17 @@ class DatasourceService:
         except Exception as e:
             logger.error(f"Error updating data source permissions {datasource_id}: {str(e)}")
             raise
+
+    def delete_datasource(self, datasource_id: str) -> Dict[str, Any]:
+        """Delete a data source"""
+        try:
+            response = self.client.delete_data_source(
+                AwsAccountId=self.account_id,
+                DataSourceId=datasource_id
+            )
+            logger.info(f"Deleted data source: {datasource_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error deleting data source {datasource_id}: {str(e)}")
+            raise

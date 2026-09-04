@@ -4,38 +4,49 @@ A Model Context Protocol (MCP) server for Amazon QuickSight that enables AI assi
 
 ## Features
 
-### 🔍 Discovery Tools (9 Read Operations)
+### 🔍 Discovery Tools (23 Read Operations)
 - `quicksight_overview` - Get account-wide QuickSight statistics
-- `list_*` - List all datasets, data sources, analyses, dashboards
-- `describe_*` - Get detailed information about any resource
+- `list_*` - List datasets, data sources, analyses, dashboards, templates, themes, refresh schedules, dashboard versions
+- `describe_*` - Get detailed information about any resource, including full analysis/dashboard/template definitions
+- `search_*` - Search datasets, data sources, analyses, and dashboards by filter
 
-### 📝 Write Operations (19 Tools)
+### 📝 Write Operations (29 Tools)
 
-**Data Sources** (3 tools)
-- Create and update data sources (RDS, Redshift, S3, Athena, etc.)
+**Data Sources** (4 tools)
+- Create, update, and delete data sources (RDS, Redshift, S3, Athena, etc.)
 - Manage data source permissions
 
-**Datasets** (3 tools)
+**Datasets** (4 tools)
 - Create datasets with physical/logical tables
-- Update schemas and transformations
+- Update schemas and transformations, delete datasets
 - Manage dataset permissions
 
-**Analyses** (3 tools)
+**Analyses** (5 tools)
 - Build analyses with visuals, filters, parameters
 - Update analysis definitions
+- Delete and restore analyses
 - Control analysis access
 
-**Dashboards** (4 tools)
+**Dashboards** (5 tools)
 - Create dashboards from analyses
-- Update and publish dashboard versions
+- Update and publish dashboard versions, delete dashboards
 - Manage viewer/editor permissions
 
-**Data Ingestion** (6 tools)
-- Trigger SPICE data refresh
-- Monitor ingestion jobs
-- Create and manage refresh schedules
+**Data Ingestion** (5 tools)
+- Trigger and cancel SPICE data refresh
+- Create, update, and delete refresh schedules
 
-**Total: 28 tools for complete QuickSight management**
+**Templates** (3 tools)
+- Create, update, and delete templates
+
+**Themes** (3 tools)
+- Create, update, and delete themes
+
+### 🔗 Embedding (4 Tools)
+- Generate embed URLs for registered and anonymous users
+- Dashboard and console session embed URLs
+
+**Total: 56 tools for complete QuickSight management**
 
 ## Installation
 

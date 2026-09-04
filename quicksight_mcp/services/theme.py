@@ -94,3 +94,26 @@ class ThemeService:
         except Exception as e:
             logger.error(f"Error updating theme {request.theme_id}: {str(e)}")
             raise
+
+    def delete_theme(
+        self,
+        theme_id: str,
+        version_number: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Delete a theme, or a single version of it"""
+        try:
+            params = {
+                'AwsAccountId': self.account_id,
+                'ThemeId': theme_id
+            }
+
+            if version_number:
+                params['VersionNumber'] = version_number
+
+            response = self.client.delete_theme(**params)
+            logger.info(f"Deleted theme: {theme_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error deleting theme {theme_id}: {str(e)}")
+            raise

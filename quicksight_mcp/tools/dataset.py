@@ -8,7 +8,8 @@ from quicksight_mcp.models.tool_models import (
     CreateDatasetRequest, CreateDatasetResponse,
     UpdateDatasetRequest, UpdateDatasetResponse,
     UpdateDatasetPermissionsRequest, UpdateDatasetPermissionsResponse,
-    PaginationInfo, ErrorInfo
+    PaginationInfo, ErrorInfo,
+    DeleteDatasetRequest, DeleteDatasetResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -234,6 +235,34 @@ def register_dataset_tools(mcp):
             return UpdateDatasetPermissionsResponse(
                 dataset_arn="",
                 dataset_id=request.dataset_id,
+                status="FAILED",
+                error=ErrorInfo(message=str(e))
+            )
+    
+    @mcp.tool(
+        name="delete_data_set",
+        description="Permanently delete a dataset. This cannot be undone, and any analysis or dashboard built on it will break."
+    )
+    async def delete_data_set(request: DeleteDatasetRequest) -> DeleteDatasetResponse:
+        """Delete a dataset"""
+        config = mcp.config
+        quicksight = mcp.quicksight
+
+        try:
+            service = DatasetService(quicksight, config.aws_account_id)
+            response = service.delete_dataset(dataset_id=request.dataset_id)
+
+            return DeleteDatasetResponse(
+                dataset_id=response.get('DataSetId', request.dataset_id),
+                arn=response.get('Arn', ''),
+                status="SUCCESS"
+            )
+
+        except Exception as e:
+            logger.error(f"Error deleting dataset: {str(e)}")
+            return DeleteDatasetResponse(
+                dataset_id=request.dataset_id,
+                arn="",
                 status="FAILED",
                 error=ErrorInfo(message=str(e))
             )

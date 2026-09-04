@@ -8,7 +8,8 @@ from quicksight_mcp.models.tool_models import (
     DescribeTemplateDefinitionRequest, DescribeTemplateDefinitionResponse,
     CreateTemplateRequest, CreateTemplateResponse,
     UpdateTemplateRequest, UpdateTemplateResponse,
-    PaginationInfo, ErrorInfo
+    PaginationInfo, ErrorInfo,
+    DeleteTemplateRequest, DeleteTemplateResponse,
 )
 from quicksight_mcp.models.template import (
     CreateTemplateRequest as TemplateCreateRequest,
@@ -257,6 +258,40 @@ def register_template_tools(mcp):
                 template_id=request.template_id,
                 version_arn="",
                 update_status="FAILED",
+                status="FAILED",
+                error=ErrorInfo(message=str(e))
+            )
+    
+    @mcp.tool(
+        name="delete_template",
+        description=(
+            "Permanently delete a template. Pass version_number to delete only that one "
+            "version instead of the whole template. This cannot be undone."
+        )
+    )
+    async def delete_template(request: DeleteTemplateRequest) -> DeleteTemplateResponse:
+        """Delete a template or one of its versions"""
+        config = mcp.config
+        quicksight = mcp.quicksight
+
+        try:
+            service = TemplateService(quicksight, config.aws_account_id)
+            response = service.delete_template(
+                template_id=request.template_id,
+                version_number=request.version_number
+            )
+
+            return DeleteTemplateResponse(
+                template_id=response.get('TemplateId', request.template_id),
+                arn=response.get('Arn', ''),
+                status="SUCCESS"
+            )
+
+        except Exception as e:
+            logger.error(f"Error deleting template: {str(e)}")
+            return DeleteTemplateResponse(
+                template_id=request.template_id,
+                arn="",
                 status="FAILED",
                 error=ErrorInfo(message=str(e))
             )

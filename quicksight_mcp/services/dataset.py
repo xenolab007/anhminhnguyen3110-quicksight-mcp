@@ -171,3 +171,17 @@ class DatasetService:
         except Exception as e:
             logger.error(f"Error updating dataset permissions {dataset_id}: {str(e)}")
             raise
+
+    def delete_dataset(self, dataset_id: str) -> Dict[str, Any]:
+        """Delete a dataset"""
+        try:
+            response = self.client.delete_data_set(
+                AwsAccountId=self.account_id,
+                DataSetId=dataset_id
+            )
+            logger.info(f"Deleted dataset: {dataset_id}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error deleting dataset {dataset_id}: {str(e)}")
+            raise
